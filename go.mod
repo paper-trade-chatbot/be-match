@@ -18,7 +18,7 @@ require (
 	github.com/jinzhu/gorm v1.9.16
 	github.com/paper-trade-chatbot/be-common v0.0.0-20221117030101-61df3f5c1996
 	github.com/paper-trade-chatbot/be-proto v0.0.0-20221122075445-1aa3bafeaffc
-	github.com/paper-trade-chatbot/be-pubsub v0.0.0-20221122100734-b5168cecc30d
+	github.com/paper-trade-chatbot/be-pubsub v0.0.0-20221123022717-a8fa79fc71c2
 	github.com/shopspring/decimal v1.3.1
 	github.com/tinylib/msgp v1.1.6
 	golang.org/x/net v0.2.0
