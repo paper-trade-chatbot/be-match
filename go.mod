@@ -17,8 +17,8 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/jinzhu/gorm v1.9.16
 	github.com/paper-trade-chatbot/be-common v0.0.0-20221117030101-61df3f5c1996
-	github.com/paper-trade-chatbot/be-proto v0.0.0-20221122075445-1aa3bafeaffc
-	github.com/paper-trade-chatbot/be-pubsub v0.0.0-20221123022717-a8fa79fc71c2
+	github.com/paper-trade-chatbot/be-proto v0.0.0-20221128061655-b27938e36108
+	github.com/paper-trade-chatbot/be-pubsub v0.0.0-20221123033622-c545aa104a8b
 	github.com/shopspring/decimal v1.3.1
 	github.com/tinylib/msgp v1.1.6
 	golang.org/x/net v0.2.0

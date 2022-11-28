@@ -12,28 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const table = "order"
-
-type OrderColumn int
-
-const (
-	OrderColumn_None OrderColumn = iota
-	OrderColumn_ProductCode
-	OrderColumn_CreatedAt
-)
-
-type OrderDirection int
-
-const (
-	OrderDirection_None = 0
-	OrderDirection_ASC  = 1
-	OrderDirection_DESC = -1
-)
-
-type Order struct {
-	Column    OrderColumn
-	Direction OrderDirection
-}
+const table = "match_record"
 
 // QueryModel set query condition, used by queryChain()
 type QueryModel struct {

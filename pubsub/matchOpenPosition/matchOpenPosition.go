@@ -59,6 +59,7 @@ func MatchOpenPosition(ctx context.Context, model *rabbitmq.OpenPositionModel) e
 			},
 		},
 	})
+
 	if err != nil {
 		logging.Error(ctx, "[MatchOpenPosition] failed to get product [%s][%s]: %v", model.ExchangeCode, model.ProductCode, err)
 		if _, err := service.Impl.OrderIntf.FailOrder(ctx, &order.FailOrderReq{

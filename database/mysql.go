@@ -6,9 +6,10 @@ import (
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 
 	// MySQL driver.
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+	_ "gorm.io/driver/mysql"
 	// Google Cloud SQL MySQL driver.
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/mysql"
 
@@ -33,7 +34,8 @@ func (db *mysqlDB) initialize(ctx context.Context, cfg dbConfig) {
 
 	// Connect to the MySQL database.
 	var err error
-	db.DB, err = gorm.Open(mysql.Open(dbSource))
+	db.DB, err = gorm.Open(mysql.Open(dbSource), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info)})
 	logging.Info(ctx, "gorm open success")
 
 	if err != nil {
