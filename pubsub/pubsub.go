@@ -7,10 +7,12 @@ import (
 
 	"github.com/paper-trade-chatbot/be-match/config"
 	"github.com/paper-trade-chatbot/be-match/logging"
+	"github.com/paper-trade-chatbot/be-match/pubsub/matchClosePosition"
 	"github.com/paper-trade-chatbot/be-match/pubsub/matchOpenPosition"
 	bePubsub "github.com/paper-trade-chatbot/be-pubsub"
 
-	rabbitmqOrder "github.com/paper-trade-chatbot/be-pubsub/order/openPosition/rabbitmq"
+	rabbitmqClosePosition "github.com/paper-trade-chatbot/be-pubsub/order/closePosition/rabbitmq"
+	rabbitmqOpenPosition "github.com/paper-trade-chatbot/be-pubsub/order/openPosition/rabbitmq"
 )
 
 var publishers = map[string]interface{}{}
@@ -41,7 +43,7 @@ func Initialize(ctx context.Context) {
 	// |    register subscribers    |
 	// ==============================
 
-	if sub, err := rabbitmqOrder.SubscribeAndListen(
+	if sub, err := rabbitmqOpenPosition.SubscribeAndListen(
 		ctx,
 		config.GetString("RABBITMQ_USERNAME"),
 		config.GetString("RABBITMQ_PASSWORD"),
@@ -49,6 +51,20 @@ func Initialize(ctx context.Context) {
 		config.GetString("RABBITMQ_VIRTUAL_HOST"),
 		config.GetString("SERVICE_NAME"),
 		matchOpenPosition.MatchOpenPosition,
+	); err != nil {
+		logging.Error(ctx, "SubscribeAndListen error %v", err)
+	} else {
+		subscribers = append(subscribers, sub)
+	}
+
+	if sub, err := rabbitmqClosePosition.SubscribeAndListen(
+		ctx,
+		config.GetString("RABBITMQ_USERNAME"),
+		config.GetString("RABBITMQ_PASSWORD"),
+		config.GetString("RABBITMQ_HOST"),
+		config.GetString("RABBITMQ_VIRTUAL_HOST"),
+		config.GetString("SERVICE_NAME"),
+		matchClosePosition.MatchClosePosition,
 	); err != nil {
 		logging.Error(ctx, "SubscribeAndListen error %v", err)
 	} else {

@@ -20,11 +20,10 @@ type QueryModel struct {
 }
 
 type UpdateModel struct {
-	MatchStatus  *dbModels.MatchStatus
-	UnitPrice    *decimal.NullDecimal
-	RollbackerID *sql.NullInt64
-	RollbackedAt *sql.NullTime
-	Remark       *sql.NullString
+	MatchStatus *dbModels.MatchStatus
+	PositionID  *sql.NullInt64
+	OpenPrice   *decimal.NullDecimal
+	ClosePrice  *decimal.NullDecimal
 }
 
 // New a row
@@ -124,6 +123,15 @@ func Modify(tx *gorm.DB, model *dbModels.MatchRecordModel, update *UpdateModel) 
 	attrs := map[string]interface{}{}
 	if update.MatchStatus != nil {
 		attrs["match_status"] = *update.MatchStatus
+	}
+	if update.PositionID != nil {
+		attrs["position_id"] = *update.PositionID
+	}
+	if update.OpenPrice != nil {
+		attrs["open_price"] = *update.OpenPrice
+	}
+	if update.ClosePrice != nil {
+		attrs["close_price"] = *update.ClosePrice
 	}
 
 	err := tx.Table(table).

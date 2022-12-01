@@ -1,6 +1,7 @@
 package dbModels
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -34,15 +35,18 @@ const (
 )
 
 type MatchRecordModel struct {
-	ID              uint64          `gorm:"column:id; primary_key"`
-	OrderID         uint64          `gorm:"column:order_id"`
-	MemberID        uint64          `gorm:"column:member_id"`
-	MatchStatus     MatchStatus     `gorm:"column:match_status"`
-	TransactionType TransactionType `gorm:"column:transaction_type"`
-	ExchangeCode    string          `gorm:"column:exchange_code"`
-	ProductCode     string          `gorm:"column:product_code"`
-	TradeType       TradeType       `gorm:"column:trade_type"`
-	Amount          decimal.Decimal `gorm:"column:amount"`
-	CreatedAt       time.Time       `gorm:"column:created_at"`
-	UpdatedAt       time.Time       `gorm:"column:updated_at"`
+	ID              uint64              `gorm:"column:id; primary_key"`
+	OrderID         uint64              `gorm:"column:order_id"`
+	MemberID        uint64              `gorm:"column:member_id"`
+	PositionID      sql.NullInt64       `gorm:"column:position_id"`
+	MatchStatus     MatchStatus         `gorm:"column:match_status"`
+	TransactionType TransactionType     `gorm:"column:transaction_type"`
+	ExchangeCode    string              `gorm:"column:exchange_code"`
+	ProductCode     string              `gorm:"column:product_code"`
+	TradeType       TradeType           `gorm:"column:trade_type"`
+	OpenPrice       decimal.NullDecimal `gorm:"column:open_price"`
+	ClosePrice      decimal.NullDecimal `gorm:"column:close_price"`
+	Amount          decimal.Decimal     `gorm:"column:amount"`
+	CreatedAt       time.Time           `gorm:"column:created_at"`
+	UpdatedAt       time.Time           `gorm:"column:updated_at"`
 }

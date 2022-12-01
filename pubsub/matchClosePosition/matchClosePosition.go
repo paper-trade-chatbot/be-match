@@ -1,4 +1,4 @@
-package matchOpenPosition
+package matchClosePosition
 
 import (
 	"context"
@@ -15,12 +15,12 @@ import (
 	"github.com/paper-trade-chatbot/be-proto/product"
 	"github.com/paper-trade-chatbot/be-proto/quote"
 	"github.com/paper-trade-chatbot/be-proto/wallet"
-	"github.com/paper-trade-chatbot/be-pubsub/order/openPosition/rabbitmq"
+	"github.com/paper-trade-chatbot/be-pubsub/order/closePosition/rabbitmq"
 	"github.com/shopspring/decimal"
 )
 
-func MatchOpenPosition(ctx context.Context, model *rabbitmq.OpenPositionModel) error {
-	logging.Info(ctx, "[MatchOpenPosition] model: %#v", model)
+func MatchClosePosition(ctx context.Context, model *rabbitmq.ClosePositionModel) error {
+	logging.Info(ctx, "[MatchClosePosition] model: %#v", model)
 	db := database.GetDB()
 	deal := false
 	retryCount := 0
@@ -30,20 +30,21 @@ func MatchOpenPosition(ctx context.Context, model *rabbitmq.OpenPositionModel) e
 	matchRecord := &dbModels.MatchRecordModel{
 		OrderID:         model.ID,
 		MemberID:        model.MemberID,
+		PositionID:      sql.NullInt64{Valid: true, Int64: int64(model.PositionID)},
 		MatchStatus:     dbModels.MatchStatus_Pending,
-		TransactionType: dbModels.TransactionType_OpenPosition,
+		TransactionType: dbModels.TransactionType_ClosePosition,
 		ExchangeCode:    model.ExchangeCode,
 		ProductCode:     model.ProductCode,
 		TradeType:       dbModels.TradeType(model.TradeType),
-		Amount:          model.Amount,
+		OpenPrice:       decimal.NewNullDecimal(model.OpenPrice),
+		Amount:          model.CloseAmount,
 	}
 
+	var closePrice *decimal.NullDecimal = nil
+
 	if _, err := matchRecordDao.New(db, matchRecord); err != nil {
-		logging.Error(ctx, "[MatchOpenPosition] failed to new matchRecord: %v", err)
-		return err
+		logging.Error(ctx, "[MatchClosePosition] failed to new matchRecord: %v", err)
 	}
-	var openPrice *decimal.NullDecimal = nil
-	var positionID *sql.NullInt64 = nil
 
 	defer func() {
 		if matchRecord.MatchStatus != dbModels.MatchStatus_Finished {
@@ -52,10 +53,9 @@ func MatchOpenPosition(ctx context.Context, model *rabbitmq.OpenPositionModel) e
 
 		if err := matchRecordDao.Modify(db, matchRecord, &matchRecordDao.UpdateModel{
 			MatchStatus: &matchRecord.MatchStatus,
-			PositionID:  positionID,
-			OpenPrice:   openPrice,
+			ClosePrice:  closePrice,
 		}); err != nil {
-			logging.Error(ctx, "[MatchOpenPosition] failed to Modify matchRecord [%d]: %v", model.ID, err)
+			logging.Error(ctx, "[MatchClosePosition] failed to Modify matchRecord [%d]: %v", model.ID, err)
 		}
 	}()
 
@@ -69,11 +69,11 @@ func MatchOpenPosition(ctx context.Context, model *rabbitmq.OpenPositionModel) e
 	})
 
 	if err != nil {
-		logging.Error(ctx, "[MatchOpenPosition] failed to get product [%s][%s]: %v", model.ExchangeCode, model.ProductCode, err)
+		logging.Error(ctx, "[MatchClosePosition] failed to get product [%s][%s]: %v", model.ExchangeCode, model.ProductCode, err)
 		if _, err := service.Impl.OrderIntf.FailOrder(ctx, &order.FailOrderReq{
 			Id: model.ID,
 		}); err != nil {
-			logging.Error(ctx, "[MatchOpenPosition] failed to FailOrder [%d]: %v", model.ID, err)
+			logging.Error(ctx, "[MatchClosePosition] failed to FailOrder [%d]: %v", model.ID, err)
 		}
 		return err
 	}
@@ -89,22 +89,22 @@ func MatchOpenPosition(ctx context.Context, model *rabbitmq.OpenPositionModel) e
 			Currency: &productRes.Product.CurrencyCode,
 		})
 		if err != nil || len(walletRes.Wallets) == 0 {
-			logging.Error(ctx, "[MatchOpenPosition] failed to get wallet by member[%d] currency[%s]: %v", model.MemberID, productRes.Product.CurrencyCode, err)
+			logging.Error(ctx, "[MatchClosePosition] failed to get wallet by member[%d] currency[%s]: %v", model.MemberID, productRes.Product.CurrencyCode, err)
 			if _, err := service.Impl.OrderIntf.FailOrder(ctx, &order.FailOrderReq{
 				Id: model.ID,
 			}); err != nil {
-				logging.Error(ctx, "[MatchOpenPosition] failed to FailOrder [%d]: %v", model.ID, err)
+				logging.Error(ctx, "[MatchClosePosition] failed to FailOrder [%d]: %v", model.ID, err)
 			}
 			return err
 		}
 
 		balance, err := decimal.NewFromString(walletRes.Wallets[0].Amount)
 		if err != nil {
-			logging.Error(ctx, "[MatchOpenPosition] NewFromString failed: %v", err)
+			logging.Error(ctx, "[MatchClosePosition] NewFromString failed: %v", err)
 			if _, err := service.Impl.OrderIntf.FailOrder(ctx, &order.FailOrderReq{
 				Id: model.ID,
 			}); err != nil {
-				logging.Error(ctx, "[MatchOpenPosition] failed to FailOrder [%d]: %v", model.ID, err)
+				logging.Error(ctx, "[MatchClosePosition] failed to FailOrder [%d]: %v", model.ID, err)
 			}
 			return err
 		}
@@ -128,43 +128,53 @@ func MatchOpenPosition(ctx context.Context, model *rabbitmq.OpenPositionModel) e
 			GetTo:      &getTo,
 		})
 		if err != nil || len(quoteRes.Quotes) == 0 {
-			logging.Warn(ctx, "[MatchOpenPosition] GetQuotes failed. retry later: %v", err)
+			logging.Warn(ctx, "[MatchClosePosition] GetQuotes failed. retry later: %v", err)
 			continue
 		}
 
 		unitPriceString, ok := quoteRes.Quotes[0].Quotes[key]
 		if !ok {
-			logging.Warn(ctx, "[MatchOpenPosition] GetQuotes no [%s] field. retry later", key)
+			logging.Warn(ctx, "[MatchClosePosition] GetQuotes no [%s] field. retry later", key)
 			continue
 		}
 
 		unitPrice, err = decimal.NewFromString(unitPriceString)
 		if err != nil {
-			logging.Warn(ctx, "[MatchOpenPosition] GetQuotes NewFromString failed. retry later: %v", err)
+			logging.Warn(ctx, "[MatchClosePosition] GetQuotes NewFromString failed. retry later: %v", err)
 			continue
 		}
 
-		if balance.LessThan(unitPrice.Mul(model.Amount)) {
-			logging.Error(ctx, "[MatchOpenPosition] balance not enough: %v", common.ErrInsufficientBalance)
-			if _, err := service.Impl.OrderIntf.FailOrder(ctx, &order.FailOrderReq{
-				Id: model.ID,
-			}); err != nil {
-				logging.Error(ctx, "[MatchOpenPosition] failed to FailOrder [%d]: %v", model.ID, err)
-			}
-			return err
+		equity := decimal.Zero
+		if model.TradeType == rabbitmq.TradeType_Buy {
+			closeAmount := unitPrice.Mul(model.CloseAmount)
+			equity = closeAmount
+		} else {
+			closeAmount := unitPrice.Mul(model.CloseAmount)
+			openAmount := model.OpenPrice.Mul(model.CloseAmount)
+			equity = openAmount.Sub(closeAmount).Add(openAmount)
+			// *
+			// * 例：當開倉賣100時, 關倉跌至80, 則賺20
+			// * 保證金100, 加上20, 最後拿回120
+			// * 最終拿回金額 = (開倉淨值 - 關倉淨值) + 保證金
+			// * 目前保證金為開倉淨值
+			// *
+		}
+
+		if balance.Add(equity).LessThan(decimal.Zero) {
+			logging.Warn(ctx, "[MatchClosePosition] balance not enough: %v", common.ErrInsufficientBalance)
 		}
 
 		beforeAmount := balance.String()
 		transactionRes, err := service.Impl.WalletIntf.Transaction(ctx, &wallet.TransactionReq{
 			WalletID:     walletRes.Wallets[0].Id,
-			Action:       wallet.Action_Action_OPEN,
-			Amount:       unitPrice.Mul(model.Amount).Neg().String(),
+			Action:       wallet.Action_Action_CLOSE,
+			Amount:       equity.String(),
 			Currency:     productRes.Product.CurrencyCode,
 			CommitterID:  model.MemberID,
 			BeforeAmount: &beforeAmount,
 		})
 		if err != nil {
-			logging.Warn(ctx, "[MatchOpenPosition] Transaction failed. retry later: %v", err)
+			logging.Warn(ctx, "[MatchClosePosition] Transaction failed. retry later: %v", err)
 			continue
 		}
 
@@ -173,38 +183,35 @@ func MatchOpenPosition(ctx context.Context, model *rabbitmq.OpenPositionModel) e
 	}
 
 	if !deal {
-		logging.Error(ctx, "[MatchOpenPosition] failed to match [%d]: %v", model.ID, err)
+		logging.Error(ctx, "[MatchClosePosition] failed to match [%d]: %v", model.ID, err)
 		if _, err := service.Impl.OrderIntf.FailOrder(ctx, &order.FailOrderReq{
 			Id: model.ID,
 		}); err != nil {
-			logging.Error(ctx, "[MatchOpenPosition] failed to FailOrder [%d]: %v", model.ID, err)
+			logging.Error(ctx, "[MatchClosePosition] failed to FailOrder [%d]: %v", model.ID, err)
 		}
 		return err
 	}
 
-	res, err := service.Impl.OrderIntf.FinishOpenPositionOrder(ctx, &order.FinishOpenPositionOrderReq{
+	if _, err := service.Impl.OrderIntf.FinishClosePositionOrder(ctx, &order.FinishClosePositionOrderReq{
 		Id:                  model.ID,
+		PositionID:          model.PositionID,
 		UnitPrice:           unitPrice.String(),
+		CloseAmount:         model.CloseAmount.String(),
 		TransactionRecordID: uint64(transactionID),
 		FinishedAt:          time.Now().Unix(),
-	})
-	if err != nil {
-		logging.Error(ctx, "[MatchOpenPosition] FinishOpenPositionOrder failed: %v", err)
+	}); err != nil {
+		logging.Error(ctx, "[MatchClosePosition] FinishClosePositionOrder failed: %v", err)
 		if _, err := service.Impl.WalletIntf.RollbackTransaction(ctx, &wallet.RollbackTransactionReq{
 			Id:           transactionID,
 			RollbackerID: model.MemberID,
 		}); err != nil {
-			logging.Error(ctx, "[MatchOpenPosition] failed to RollbackTransaction [%d]: %v", model.ID, err)
+			logging.Error(ctx, "[MatchClosePosition] failed to RollbackTransaction [%d]: %v", model.ID, err)
 		}
 		return err
 	}
 
 	matchRecord.MatchStatus = dbModels.MatchStatus_Finished
-	positionID = &sql.NullInt64{
-		Valid: true,
-		Int64: int64(res.PositionID),
-	}
-	openPrice = &decimal.NullDecimal{
+	closePrice = &decimal.NullDecimal{
 		Valid:   true,
 		Decimal: unitPrice,
 	}

@@ -616,6 +616,12 @@ github.com/paper-trade-chatbot/be-proto v0.0.0-20221122075445-1aa3bafeaffc h1:Oi
 github.com/paper-trade-chatbot/be-proto v0.0.0-20221122075445-1aa3bafeaffc/go.mod h1:EF2NN7p3eYKdCjTNBEpPue9l6lnLS5hrBYEUYUhnn5Q=
 github.com/paper-trade-chatbot/be-proto v0.0.0-20221128061655-b27938e36108 h1:RwsjfLPGtk560qLdP0xba+LG2oExP8JG8Z3D3LSQzws=
 github.com/paper-trade-chatbot/be-proto v0.0.0-20221128061655-b27938e36108/go.mod h1:EF2NN7p3eYKdCjTNBEpPue9l6lnLS5hrBYEUYUhnn5Q=
+github.com/paper-trade-chatbot/be-proto v0.0.0-20221201060921-b62c5a8ab458 h1:mWkswLaParp+/UJLlrb6MOLhXSwJXTVZrmObKxHwYD0=
+github.com/paper-trade-chatbot/be-proto v0.0.0-20221201060921-b62c5a8ab458/go.mod h1:EF2NN7p3eYKdCjTNBEpPue9l6lnLS5hrBYEUYUhnn5Q=
+github.com/paper-trade-chatbot/be-proto v0.0.0-20221201062242-f36d01216bcf h1:k8U81qf4Cb8e5vZ3fdqv3fUVxgWSkPiq3vZDJGY+Oao=
+github.com/paper-trade-chatbot/be-proto v0.0.0-20221201062242-f36d01216bcf/go.mod h1:EF2NN7p3eYKdCjTNBEpPue9l6lnLS5hrBYEUYUhnn5Q=
+github.com/paper-trade-chatbot/be-proto v0.0.0-20221201074729-24568ec15382 h1:ouaE1OOTUMEWrfZJU8bwR9Qv6ffce1/iX40EqBYdh5o=
+github.com/paper-trade-chatbot/be-proto v0.0.0-20221201074729-24568ec15382/go.mod h1:EF2NN7p3eYKdCjTNBEpPue9l6lnLS5hrBYEUYUhnn5Q=
 github.com/paper-trade-chatbot/be-pubsub v0.0.0-20221122033323-78d0dcf077c5 h1:jftjpf0HOr0Cty1T52jX/rUXHJHNfW82Edcy0Jd+4ic=
 github.com/paper-trade-chatbot/be-pubsub v0.0.0-20221122033323-78d0dcf077c5/go.mod h1:9tSsTk3daqJ8MJOxDT10Mk8jdv7muM1yEg3r51NaSw0=
 github.com/paper-trade-chatbot/be-pubsub v0.0.0-20221122100734-b5168cecc30d h1:bd4qX91CTVwoC8W/mrDb93KtP993/hsAEixZYed42nc=
@@ -628,6 +634,14 @@ github.com/paper-trade-chatbot/be-pubsub v0.0.0-20221123032014-790039235800 h1:C
 github.com/paper-trade-chatbot/be-pubsub v0.0.0-20221123032014-790039235800/go.mod h1:9tSsTk3daqJ8MJOxDT10Mk8jdv7muM1yEg3r51NaSw0=
 github.com/paper-trade-chatbot/be-pubsub v0.0.0-20221123033622-c545aa104a8b h1:3WEeGFiQPJxg92+Xm6/IzR1JDcVbKEI3iwfM6LBFMHs=
 github.com/paper-trade-chatbot/be-pubsub v0.0.0-20221123033622-c545aa104a8b/go.mod h1:9tSsTk3daqJ8MJOxDT10Mk8jdv7muM1yEg3r51NaSw0=
+github.com/paper-trade-chatbot/be-pubsub v0.0.0-20221130100547-c5dc2e21df18 h1:zb6obQOFItmq3ZxT1yTLJaD7ok5dQ6CWfyHi1uaWG44=
+github.com/paper-trade-chatbot/be-pubsub v0.0.0-20221130100547-c5dc2e21df18/go.mod h1:9tSsTk3daqJ8MJOxDT10Mk8jdv7muM1yEg3r51NaSw0=
+github.com/paper-trade-chatbot/be-pubsub v0.0.0-20221201030300-b8b8a01ace7f h1:grooVxTvrhKIF3frqA3suVeB4648heNdrdmysRZ8WTw=
+github.com/paper-trade-chatbot/be-pubsub v0.0.0-20221201030300-b8b8a01ace7f/go.mod h1:9tSsTk3daqJ8MJOxDT10Mk8jdv7muM1yEg3r51NaSw0=
+github.com/paper-trade-chatbot/be-pubsub v0.0.0-20221201030917-678bc3695606 h1:JHGhDjxCjAg9KiuZVoC9hBr5au9Pl2OSPgf0ZtGgvy8=
+github.com/paper-trade-chatbot/be-pubsub v0.0.0-20221201030917-678bc3695606/go.mod h1:9tSsTk3daqJ8MJOxDT10Mk8jdv7muM1yEg3r51NaSw0=
+github.com/paper-trade-chatbot/be-pubsub v0.0.0-20221201031742-6145ca0ae7ef h1:FLayCtqB8BhgUs2n746XjM2BOzkXND7N1ODehN7Quzg=
+github.com/paper-trade-chatbot/be-pubsub v0.0.0-20221201031742-6145ca0ae7ef/go.mod h1:9tSsTk3daqJ8MJOxDT10Mk8jdv7muM1yEg3r51NaSw0=
 github.com/pelletier/go-toml/v2 v2.0.1 h1:8e3L2cCQzLFi2CR4g7vGFuFxX7Jl1kKX8gW+iV0GUKU=
 github.com/pelletier/go-toml/v2 v2.0.1/go.mod h1:r9LEWfGN8R5k0VXJ+0BkIe7MYkRdwZOjgMj2KwnJFUo=
 github.com/philhofer/fwd v1.1.1 h1:GdGcTjf5RNAxwS4QLsiMzJYj5KEvPJD3Abr261yRQXQ=
