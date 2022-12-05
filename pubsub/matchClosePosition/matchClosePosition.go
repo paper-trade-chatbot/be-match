@@ -12,11 +12,13 @@ import (
 	"github.com/paper-trade-chatbot/be-match/models/dbModels"
 	"github.com/paper-trade-chatbot/be-match/service"
 	"github.com/paper-trade-chatbot/be-proto/order"
+	"github.com/paper-trade-chatbot/be-proto/position"
 	"github.com/paper-trade-chatbot/be-proto/product"
 	"github.com/paper-trade-chatbot/be-proto/quote"
 	"github.com/paper-trade-chatbot/be-proto/wallet"
 	"github.com/paper-trade-chatbot/be-pubsub/order/closePosition/rabbitmq"
 	"github.com/shopspring/decimal"
+	"google.golang.org/grpc/status"
 )
 
 func MatchClosePosition(ctx context.Context, model *rabbitmq.ClosePositionModel) error {
@@ -26,6 +28,51 @@ func MatchClosePosition(ctx context.Context, model *rabbitmq.ClosePositionModel)
 	retryCount := 0
 	var transactionID uint64 = 0
 	unitPrice := decimal.Decimal{}
+	var orderErr error
+	orderProcess := order.OrderProcess_OrderProcess_Failed
+	var expire *int64
+
+	if _, err := service.Impl.OrderIntf.UpdateOrderProcess(ctx, &order.UpdateOrderProcessReq{
+		Id:           model.ID,
+		OrderProcess: order.OrderProcess_OrderProcess_Matching,
+	}); err != nil {
+		logging.Error(ctx, "[MatchClosePosition] failed to Update OrderProcess [%d]: %v", model.ID, err)
+	}
+
+	defer func() {
+		if orderErr != nil {
+			failCode := uint64(status.Code(orderErr))
+			s, _ := status.FromError(orderErr)
+			remark := s.Message()
+			if _, err := service.Impl.OrderIntf.FailOrder(ctx, &order.FailOrderReq{
+				Id:       model.ID,
+				FailCode: &failCode,
+				Remark:   &remark,
+			}); err != nil {
+				logging.Error(ctx, "[MatchOpenPosition] failed to FailOrder [%d]: %v", model.ID, err)
+			}
+			if _, err := service.Impl.PositionIntf.StopPendingPosition(ctx, &position.StopPendingPositionReq{
+				Id: model.PositionID,
+			}); err != nil {
+				logging.Error(ctx, "[MatchClosePosition] StopPendingPosition failed: %v", err)
+			}
+			if _, err := service.Impl.OrderIntf.UpdateOrderProcess(ctx, &order.UpdateOrderProcessReq{
+				Id:           model.ID,
+				OrderProcess: order.OrderProcess_OrderProcess_Failed,
+			}); err != nil {
+				logging.Error(ctx, "[MatchClosePosition] failed to Update OrderProcess [%d]: %v", model.ID, err)
+			}
+			return
+		}
+
+		if _, err := service.Impl.OrderIntf.UpdateOrderProcess(ctx, &order.UpdateOrderProcessReq{
+			Id:           model.ID,
+			OrderProcess: orderProcess,
+			Expire:       expire,
+		}); err != nil {
+			logging.Error(ctx, "[MatchClosePosition] failed to Update OrderProcess [%d]: %v", model.ID, err)
+		}
+	}()
 
 	matchRecord := &dbModels.MatchRecordModel{
 		OrderID:         model.ID,
@@ -70,11 +117,7 @@ func MatchClosePosition(ctx context.Context, model *rabbitmq.ClosePositionModel)
 
 	if err != nil {
 		logging.Error(ctx, "[MatchClosePosition] failed to get product [%s][%s]: %v", model.ExchangeCode, model.ProductCode, err)
-		if _, err := service.Impl.OrderIntf.FailOrder(ctx, &order.FailOrderReq{
-			Id: model.ID,
-		}); err != nil {
-			logging.Error(ctx, "[MatchClosePosition] failed to FailOrder [%d]: %v", model.ID, err)
-		}
+		orderErr = err
 		return err
 	}
 
@@ -89,23 +132,18 @@ func MatchClosePosition(ctx context.Context, model *rabbitmq.ClosePositionModel)
 			Currency: &productRes.Product.CurrencyCode,
 		})
 		if err != nil || len(walletRes.Wallets) == 0 {
-			logging.Error(ctx, "[MatchClosePosition] failed to get wallet by member[%d] currency[%s]: %v", model.MemberID, productRes.Product.CurrencyCode, err)
-			if _, err := service.Impl.OrderIntf.FailOrder(ctx, &order.FailOrderReq{
-				Id: model.ID,
-			}); err != nil {
-				logging.Error(ctx, "[MatchClosePosition] failed to FailOrder [%d]: %v", model.ID, err)
+			if err == nil {
+				err = common.ErrNoSuchWallet
 			}
+			logging.Error(ctx, "[MatchClosePosition] failed to get wallet by member[%d] currency[%s]: %v", model.MemberID, productRes.Product.CurrencyCode, err)
+			orderErr = err
 			return err
 		}
 
 		balance, err := decimal.NewFromString(walletRes.Wallets[0].Amount)
 		if err != nil {
 			logging.Error(ctx, "[MatchClosePosition] NewFromString failed: %v", err)
-			if _, err := service.Impl.OrderIntf.FailOrder(ctx, &order.FailOrderReq{
-				Id: model.ID,
-			}); err != nil {
-				logging.Error(ctx, "[MatchClosePosition] failed to FailOrder [%d]: %v", model.ID, err)
-			}
+			orderErr = err
 			return err
 		}
 
@@ -183,13 +221,16 @@ func MatchClosePosition(ctx context.Context, model *rabbitmq.ClosePositionModel)
 	}
 
 	if !deal {
-		logging.Error(ctx, "[MatchClosePosition] failed to match [%d]: %v", model.ID, err)
-		if _, err := service.Impl.OrderIntf.FailOrder(ctx, &order.FailOrderReq{
-			Id: model.ID,
-		}); err != nil {
-			logging.Error(ctx, "[MatchClosePosition] failed to FailOrder [%d]: %v", model.ID, err)
-		}
-		return err
+		logging.Error(ctx, "[MatchClosePosition] failed to match [%d]: %v", model.ID, common.ErrExceedRetryTimes)
+		orderErr = common.ErrExceedRetryTimes
+		return common.ErrExceedRetryTimes
+	}
+
+	if _, err := service.Impl.OrderIntf.UpdateOrderProcess(ctx, &order.UpdateOrderProcessReq{
+		Id:           model.ID,
+		OrderProcess: order.OrderProcess_OrderProcess_Matched,
+	}); err != nil {
+		logging.Error(ctx, "[MatchClosePosition] failed to Update OrderProcess [%d]: %v", model.ID, err)
 	}
 
 	if _, err := service.Impl.OrderIntf.FinishClosePositionOrder(ctx, &order.FinishClosePositionOrderReq{
@@ -215,6 +256,10 @@ func MatchClosePosition(ctx context.Context, model *rabbitmq.ClosePositionModel)
 		Valid:   true,
 		Decimal: unitPrice,
 	}
+
+	orderProcess = order.OrderProcess_OrderProcess_Done
+	expireTime := int64(time.Minute)
+	expire = &expireTime
 
 	return nil
 }

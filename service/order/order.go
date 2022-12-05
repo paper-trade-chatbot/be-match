@@ -15,6 +15,8 @@ type OrderIntf interface {
 	FailOrder(ctx context.Context, in *order.FailOrderReq) (*order.FailOrderRes, error)
 	RollbackOrder(ctx context.Context, in *order.RollbackOrderReq) (*order.RollbackOrderRes, error)
 	GetOrders(ctx context.Context, in *order.GetOrdersReq) (*order.GetOrdersRes, error)
+	UpdateOrderProcess(ctx context.Context, in *order.UpdateOrderProcessReq) (*order.UpdateOrderProcessRes, error)
+	GetOrderProcess(ctx context.Context, in *order.GetOrderProcessReq) (*order.GetOrderProcessRes, error)
 }
 
 type OrderImpl struct {
@@ -58,4 +60,12 @@ func (impl *OrderImpl) RollbackOrder(ctx context.Context, in *order.RollbackOrde
 
 func (impl *OrderImpl) GetOrders(ctx context.Context, in *order.GetOrdersReq) (*order.GetOrdersRes, error) {
 	return impl.OrderClient.GetOrders(ctx, in)
+}
+
+func (impl *OrderImpl) UpdateOrderProcess(ctx context.Context, in *order.UpdateOrderProcessReq) (*order.UpdateOrderProcessRes, error) {
+	return impl.OrderClient.UpdateOrderProcess(ctx, in)
+}
+
+func (impl *OrderImpl) GetOrderProcess(ctx context.Context, in *order.GetOrderProcessReq) (*order.GetOrderProcessRes, error) {
+	return impl.OrderClient.GetOrderProcess(ctx, in)
 }

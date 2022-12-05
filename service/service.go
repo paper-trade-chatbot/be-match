@@ -9,11 +9,13 @@ import (
 	"github.com/paper-trade-chatbot/be-match/config"
 	"github.com/paper-trade-chatbot/be-match/service/member"
 	"github.com/paper-trade-chatbot/be-match/service/order"
+	"github.com/paper-trade-chatbot/be-match/service/position"
 	"github.com/paper-trade-chatbot/be-match/service/product"
 	"github.com/paper-trade-chatbot/be-match/service/quote"
 	"github.com/paper-trade-chatbot/be-match/service/wallet"
 	memberGrpc "github.com/paper-trade-chatbot/be-proto/member"
 	orderGrpc "github.com/paper-trade-chatbot/be-proto/order"
+	positionGrpc "github.com/paper-trade-chatbot/be-proto/position"
 	productGrpc "github.com/paper-trade-chatbot/be-proto/product"
 	quoteGrpc "github.com/paper-trade-chatbot/be-proto/quote"
 	walletGrpc "github.com/paper-trade-chatbot/be-proto/wallet"
@@ -42,14 +44,19 @@ var (
 	QuoteServiceHost    = config.GetString("QUOTE_GRPC_HOST")
 	QuoteServerGRpcPort = config.GetString("QUOTE_GRPC_PORT")
 	quoteServiceConn    *grpc.ClientConn
+
+	PositionServiceHost    = config.GetString("POSITION_GRPC_HOST")
+	PositionServerGRpcPort = config.GetString("POSITION_GRPC_PORT")
+	positionServiceConn    *grpc.ClientConn
 )
 
 type ServiceImpl struct {
-	MemberIntf  member.MemberIntf
-	ProductIntf product.ProductIntf
-	OrderIntf   order.OrderIntf
-	WalletIntf  wallet.WalletIntf
-	QuoteIntf   quote.QuoteIntf
+	MemberIntf   member.MemberIntf
+	ProductIntf  product.ProductIntf
+	OrderIntf    order.OrderIntf
+	WalletIntf   wallet.WalletIntf
+	QuoteIntf    quote.QuoteIntf
+	PositionIntf position.PositionIntf
 }
 
 func GrpcDial(addr string) (*grpc.ClientConn, error) {
@@ -111,6 +118,16 @@ func Initialize(ctx context.Context) {
 	fmt.Println("dial done")
 	quoteConn := quoteGrpc.NewQuoteServiceClient(quoteServiceConn)
 	Impl.QuoteIntf = quote.New(quoteConn)
+
+	addr = PositionServiceHost + ":" + PositionServerGRpcPort
+	fmt.Println("dial to order grpc server...", addr)
+	positionServiceConn, err = GrpcDial(addr)
+	if err != nil {
+		fmt.Println("Can not connect to gRPC server:", err)
+	}
+	fmt.Println("dial done")
+	positionConn := positionGrpc.NewPositionServiceClient(positionServiceConn)
+	Impl.PositionIntf = position.New(positionConn)
 }
 
 func Finalize(ctx context.Context) {
