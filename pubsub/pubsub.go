@@ -53,6 +53,7 @@ func Initialize(ctx context.Context) {
 		matchOpenPosition.MatchOpenPosition,
 	); err != nil {
 		logging.Error(ctx, "SubscribeAndListen error %v", err)
+		panic(err)
 	} else {
 		subscribers = append(subscribers, sub)
 	}
@@ -67,6 +68,7 @@ func Initialize(ctx context.Context) {
 		matchClosePosition.MatchClosePosition,
 	); err != nil {
 		logging.Error(ctx, "SubscribeAndListen error %v", err)
+		panic(err)
 	} else {
 		subscribers = append(subscribers, sub)
 	}
