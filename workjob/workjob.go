@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/gofrs/uuid"
-	"github.com/paper-trade-chatbot/be-match/logging"
+	"github.com/paper-trade-chatbot/be-common/logging"
 )
 
 type Job struct {

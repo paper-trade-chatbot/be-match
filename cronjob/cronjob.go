@@ -11,8 +11,8 @@ import (
 	"github.com/go-co-op/gocron"
 	"github.com/go-redis/redis/v9"
 	"github.com/gofrs/uuid"
-	"github.com/paper-trade-chatbot/be-match/cache"
-	"github.com/paper-trade-chatbot/be-match/logging"
+	"github.com/paper-trade-chatbot/be-common/cache"
+	"github.com/paper-trade-chatbot/be-common/logging"
 )
 
 func Cron() {
@@ -67,7 +67,7 @@ func work(cronjob func(context.Context) error, generateKey func() string, maxDur
 	}
 
 	value, err := r.Get(ctx, key).Result()
-	if err.Error() != redis.Nil.Error() && value == cronjobID.String() {
+	if err != nil && err.Error() != redis.Nil.Error() && value == cronjobID.String() {
 		if err := r.Del(ctx, key).Err(); err != nil && err.Error() != redis.Nil.Error() {
 			logging.Error(ctxTimeout, "[Cronjob] %s failed to delete key: %v", key, err)
 		}

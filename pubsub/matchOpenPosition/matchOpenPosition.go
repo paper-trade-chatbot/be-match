@@ -6,9 +6,9 @@ import (
 	"time"
 
 	common "github.com/paper-trade-chatbot/be-common"
+	"github.com/paper-trade-chatbot/be-common/database"
+	"github.com/paper-trade-chatbot/be-common/logging"
 	"github.com/paper-trade-chatbot/be-match/dao/matchRecordDao"
-	"github.com/paper-trade-chatbot/be-match/database"
-	"github.com/paper-trade-chatbot/be-match/logging"
 	"github.com/paper-trade-chatbot/be-match/models/dbModels"
 	"github.com/paper-trade-chatbot/be-match/service"
 	"github.com/paper-trade-chatbot/be-proto/order"
@@ -241,7 +241,7 @@ func MatchOpenPosition(ctx context.Context, model *rabbitmq.OpenPositionModel) e
 		Decimal: unitPrice,
 	}
 
-	orderProcess = order.OrderProcess_OrderProcess_Done
+	orderProcess = order.OrderProcess_OrderProcess_Finished
 	expireTime := int64(time.Minute)
 	expire = &expireTime
 	return nil

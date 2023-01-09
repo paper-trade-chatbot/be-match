@@ -3,7 +3,7 @@ package wallet
 import (
 	"context"
 
-	"github.com/paper-trade-chatbot/be-match/config"
+	"github.com/paper-trade-chatbot/be-common/config"
 	"github.com/paper-trade-chatbot/be-proto/wallet"
 )
 

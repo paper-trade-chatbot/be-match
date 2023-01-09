@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/paper-trade-chatbot/be-match/config"
-	"github.com/paper-trade-chatbot/be-match/logging"
+	"github.com/paper-trade-chatbot/be-common/config"
+	"github.com/paper-trade-chatbot/be-common/logging"
 	"github.com/paper-trade-chatbot/be-match/pubsub/matchClosePosition"
 	"github.com/paper-trade-chatbot/be-match/pubsub/matchOpenPosition"
 	bePubsub "github.com/paper-trade-chatbot/be-pubsub"
